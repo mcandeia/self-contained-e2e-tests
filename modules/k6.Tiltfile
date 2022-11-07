@@ -12,7 +12,7 @@ def install(run_grafana=False, add_prometheus=True):
             local_resource('grafana-portforward', serve_cmd='kubectl port-forward svc/prometheus-grafana 3000:80', resource_deps=['prometheus'])
     local_resource('install_k6', cmd='export IMG=ghcr.io/mcandeia/k6-operator:latest && rm -rf /tmp/.k6-operator >/dev/null && git clone https://github.com/grafana/k6-operator /tmp/.k6-operator && cd /tmp/.k6-operator && make deploy && cd - && rm -rf /tmp/.k6-operator')
 
-def run_load_test(namespace='', test_name='k6-test', test_script='test.js', test_config='tests', parallalism=1, prometheus_url='http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090/api/v1/write', add_dapr=True, wait_test=True):
+def run_load_test(namespace='', test_name='k6-test', test_script='test.js', test_config='tests', parallalism=1, prometheus_url='http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090/api/v1/write', add_dapr=True):
     k8s_yaml(encode_yaml({
         'apiVersion': 'k6.io/v1alpha1',
         'kind': 'K6',
@@ -45,6 +45,5 @@ def run_load_test(namespace='', test_name='k6-test', test_script='test.js', test
     k6_test_name = 'k6_'+test_name
     k8s_resource(new_name=k6_test_name,
             objects=[test_name+':k6'], resource_deps=['install_k6'])
-    if wait_test:
-        local_resource("wait-for-tests-finished", cmd="kubectl wait --for=jsonpath='{.status.stage}'=finished k6 --all -n %s" % (namespace), resource_deps=['install_k6', k6_test_name])
+    local_resource("wait-for-tests-finished", cmd="kubectl wait --namespace k6-operator-system --for=condition=ready pod --all && kubectl wait --for=jsonpath='{.status.stage}'=finished k6 --all -n %s" % (namespace), resource_deps=['install_k6', k6_test_name])
     # collect results

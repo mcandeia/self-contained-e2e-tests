@@ -3,5 +3,6 @@
   "dapr_version": "1.9",
   "run_grafana": true,
   "add_prometheus": true,
-  "tests": ["double-activation"]
+  "tests": ["double-activation"],
+  "default_registry": "localhost:5001"
 }

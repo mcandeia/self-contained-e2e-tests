@@ -1,4 +1,4 @@
-module github.com/mcandeia/self-contained-e2e-tests/apps/actor-activation-locker
+module github.com/mcandeia/self-contained-e2e-tests/apps/actor-activation-counter
 
 go 1.19
 

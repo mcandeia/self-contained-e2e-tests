@@ -14,13 +14,17 @@ dapr_version_config = 'dapr_version'
 tests_config = 'tests'
 run_grafana_config = 'run_grafana'
 add_prometheus_config = 'add_prometheus'
+default_registry_config = 'default_registry'
 config.define_string(dapr_namespace_config)
 config.define_string(dapr_version_config)
+config.define_string(default_registry_config)
 config.define_string_list(tests_config)
 config.define_bool(run_grafana_config)
 config.define_bool(add_prometheus_config)
 
 cfg = config.parse()
+
+default_registry(cfg[default_registry_config])
 
 ## Create VCluster.
 

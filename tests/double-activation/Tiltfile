@@ -1,10 +1,11 @@
 # -*- mode: Python -*
 load('ext://configmap', 'configmap_create')
 load('../../modules/k6.Tiltfile', 'run_load_test')
-load('../../apps/actor-activation-locker/Tiltfile',  deploy_app='run')
+load('../../apps/actor-activation-counter/Tiltfile',  deploy_app='run')
 
 def run(namespace):
     deploy_app(namespace)
     configmap_create('tests', from_file=['./tests/double-activation/test.js'], namespace=namespace)
-    run_load_test(namespace=namespace)
+    run_load_test(namespace=namespace, parallalism=4)
+    ## output here
 
