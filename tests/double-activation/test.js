@@ -3,11 +3,7 @@ import { check } from "k6";
 
 const singleId = 2;
 export const options = {
-  stages: [
-    { target: 200, duration: "30s" },
-    { target: 0, duration: "30s" },
-    { target: 10000, duration: "1s" },
-  ],
+  stages: [{ target: 200, duration: "10s" }],
 };
 
 export default function () {

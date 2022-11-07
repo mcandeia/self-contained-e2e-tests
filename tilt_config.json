@@ -1,0 +1,7 @@
+{
+  "dapr_namespace": "dapr-tests",
+  "dapr_version": "1.9",
+  "run_grafana": true,
+  "add_prometheus": true,
+  "tests": ["double-activation"]
+}

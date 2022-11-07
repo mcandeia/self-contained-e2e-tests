@@ -47,6 +47,7 @@ METALLB_IP_END=$(echo ${KIND_NET_CIDR} | sed "s@0.0/16@255.250@")
 METALLB_IP_RANGE="${METALLB_IP_START}-${METALLB_IP_END}"
 
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+sleep 10 # give time to get namespace created
 kubectl wait --namespace metallb-system \
                 --for=condition=ready pod \
                 --selector=app=metallb \

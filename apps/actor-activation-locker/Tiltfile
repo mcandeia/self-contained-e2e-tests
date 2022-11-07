@@ -1,0 +1,27 @@
+# -*- mode: Python -*
+
+load('../../modules/dapr.Tiltfile', 'component_create', 'with_annotations')
+load('ext://deployment', 'deployment_create', 'deployment_yaml')
+load('ext://ko', 'ko_build')
+
+redis_name = 'redis'
+redis_port = '6379'
+app_path = './apps/actor-activation-locker'
+app_port = '8080'
+
+def run(namespace, app_name='actor-activation-locker'):
+    deployment_create(
+        redis_name,
+        ports=redis_port,
+        namespace=namespace,
+        readiness_probe={'exec':{'command':['redis-cli','ping']}}
+    )
+
+    redis_svc_address = '%s.%s.svc.cluster.local:%s' % (redis_name, namespace, str(redis_port))
+    component_resource_name = 'statestore'
+    component_create(name=component_resource_name, type='state.redis', version='v1', namespace=namespace, metadata={'redisHost':redis_svc_address, 'redisPassword': '','actorStateStore': 'true' }, scopes=[app_name])
+
+    ko_build(app_name, app_path)
+    deployment = decode_yaml(deployment_yaml(app_name, namespace=namespace, port=app_port))
+    k8s_yaml(encode_yaml(with_annotations(deployment, app_name, app_port)))
+    k8s_resource(app_name, resource_deps=[component_resource_name])
