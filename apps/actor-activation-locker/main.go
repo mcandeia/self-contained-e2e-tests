@@ -15,9 +15,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
-	"sync/atomic"
+	"sync"
 
 	"github.com/dapr/go-sdk/actor"
 	dapr "github.com/dapr/go-sdk/client"
@@ -34,7 +35,7 @@ func testActorFactory() actor.Server {
 	}
 }
 
-var counter = atomic.Int64{}
+var locker = sync.Mutex{}
 
 type TestActor struct {
 	actor.ServerImplBase
@@ -46,13 +47,12 @@ func (t *TestActor) Type() string {
 }
 
 // user defined functions
-func (t *TestActor) Inc(ctx context.Context, req any) (any, error) {
-	counter.Add(1)
-	return "ok", nil
-}
-
-func (t *TestActor) Get(ctx context.Context, req any) (int, error) {
-	return int(counter.Load()), nil
+func (t *TestActor) Lock(ctx context.Context, req any) (any, error) {
+	if ok := locker.TryLock(); !ok {
+		return nil, errors.New("resource was locked!")
+	}
+	locker.Unlock()
+	return "succeed", nil
 }
 
 func main() {

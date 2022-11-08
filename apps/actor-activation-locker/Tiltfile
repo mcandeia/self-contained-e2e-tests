@@ -6,10 +6,10 @@ load('ext://ko', 'ko_build')
 
 redis_name = 'redis'
 redis_port = '6379'
-app_path = './apps/actor-activation-counter'
+app_path = './apps/actor-activation-locker'
 app_port = '8080'
 
-def run(namespace, app_name='actor-activation-counter'):
+def run(app_name='actor-activation-locker', namespace=None):
     deployment_create(
         redis_name,
         ports=redis_port,

@@ -1,9 +1,16 @@
 import http from "k6/http";
 import { check } from "k6";
-import exec from "k6/execution";
 
 export const options = {
-  stages: [{ target: 1, duration: "1s" }],
+  stages: [
+    { target: 100, duration: "5s" },
+    { target: 1000, duration: "5s" },
+    { target: 10000, duration: "5s" },
+  ],
+  thresholds: {
+    // During the whole test execution none error should occur.
+    http_req_failed: ["rate==0"],
+  },
 };
 const DAPR_ADDRESS = "http://127.0.0.1:3500/v1.0";
 
@@ -14,7 +21,7 @@ function callActorMethod(id, method) {
   );
 }
 export default function () {
-  const result = callActorMethod(exec.scenario.iterationInTest, "Inc");
+  const result = callActorMethod("exec", "Lock");
   check(result, {
     "lock response status code is 2xx":
       result.status >= 200 && result.status < 300,
@@ -22,15 +29,7 @@ export default function () {
 }
 
 export function teardown(_) {
-  const getCurrentValue = callActorMethod("teardown", "Get");
-  console.log(getCurrentValue);
-
-  check(getCurrentValue, {
-    "inc should be equal to total iterations completed":
-      +getCurrentValue.body > 0,
-  });
-
-  const shutdownResult = http.post(`${DAPR_ADDRESS}/v1.0/shutdown`);
+  const shutdownResult = http.post(`${DAPR_ADDRESS}/shutdown`);
   check(shutdownResult, {
     "shutdown response status code is 2xx":
       shutdownResult.status >= 200 && shutdownResult.status < 300,
