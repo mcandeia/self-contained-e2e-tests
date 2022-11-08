@@ -21,7 +21,8 @@ def run(app_name='actor-activation-locker', namespace=None):
     component_resource_name = 'statestore'
     component_create(name=component_resource_name, type='state.redis', version='v1', namespace=namespace, metadata={'redisHost':redis_svc_address, 'redisPassword': '','actorStateStore': 'true' }, scopes=[app_name])
 
-    ko_build(app_name, app_path)
+    #ko_build(app_name, app_path)
+    docker_build('actor-activation-counter', app_path)
     deployment = decode_yaml(deployment_yaml(app_name, namespace=namespace, port=app_port))
     k8s_yaml(encode_yaml(with_annotations(deployment, app_name, app_port)))
     k8s_resource(app_name, resource_deps=[component_resource_name])

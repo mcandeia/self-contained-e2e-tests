@@ -30,7 +30,7 @@ default_registry(cfg[default_registry_config])
 
 test_namespace = cfg[dapr_namespace_config]
 namespace_create(test_namespace)
-install_k6(run_grafana=cfg[run_grafana_config], add_prometheus=cfg[add_prometheus_config])
+install_k6(run_grafana=cfg[run_grafana_config], add_prometheus=True)
 install_dapr(version=cfg[dapr_version_config])
 
 for test in cfg.get(tests_config, []):
