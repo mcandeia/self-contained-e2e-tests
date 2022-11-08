@@ -15,6 +15,8 @@ tests_config = 'tests'
 run_grafana_config = 'run_grafana'
 add_prometheus_config = 'add_prometheus'
 default_registry_config = 'default_registry'
+infra_config = 'infra'
+config.define_string(infra_config)
 config.define_string(dapr_namespace_config)
 config.define_string(dapr_version_config)
 config.define_string(default_registry_config)
@@ -25,6 +27,7 @@ config.define_bool(add_prometheus_config)
 cfg = config.parse()
 
 default_registry(cfg[default_registry_config])
+load_dynamic('./infra/%s/Tiltfile' % cfg[infra_config])
 
 ## Create VCluster.
 

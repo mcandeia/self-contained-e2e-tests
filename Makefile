@@ -22,14 +22,9 @@ else
    TARGET_OS_LOCAL = windows
 endif
 
-K8S_CLUSTER ?= kind
-KO_DOCKER_REPO ?= localhost:5001
 #### TARGET setup-tools required tools based on OS ####
 setup-tools:
 	./scripts/tools/setup_$(TARGET_OS_LOCAL)_$(TARGET_ARCH_LOCAL).sh
-#### TARGET setup-k8s ####
-setup-k8s:
-	./scripts/kubernetes/$(K8S_CLUSTER).sh
 
 define genRunTestApp
 .PHONY: run-test-$(1)
