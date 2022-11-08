@@ -9,7 +9,7 @@ redis_port = '6379'
 app_path = './apps/actor-activation-locker'
 app_port = '8080'
 
-def run(app_name='actor-activation-locker', namespace=None):
+def run(app_name='locker-app', namespace=None):
     deployment_create(
         redis_name,
         ports=redis_port,
@@ -21,7 +21,8 @@ def run(app_name='actor-activation-locker', namespace=None):
     component_resource_name = 'statestore'
     component_create(name=component_resource_name, type='state.redis', version='v1', namespace=namespace, metadata={'redisHost':redis_svc_address, 'redisPassword': '','actorStateStore': 'true' }, scopes=[app_name])
 
-    ko_build(app_name, app_path)
+    #ko_build(app_name, app_path)
+    docker_build('locker-app', app_path)
     deployment = decode_yaml(deployment_yaml(app_name, namespace=namespace, port=app_port))
     k8s_yaml(encode_yaml(with_annotations(deployment, app_name, app_port)))
     k8s_resource(app_name, resource_deps=[component_resource_name])
