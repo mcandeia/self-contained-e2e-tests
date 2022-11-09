@@ -42,11 +42,11 @@ def with_annotations(deployment, app_name, app_port):
     return deployment
 
 
-def dapr_app_resource(app_name='dapr-app', app_path=None, namespace='default', app_port='8080', ko=False, resource_deps=[]):
+def dapr_app_resource(app_name='dapr-app', replicas=None, app_path=None, namespace='default', app_port='8080', ko=False, resource_deps=[], **kwargs):
     if not app_path:
         app_path = './apps/%s' % (app_name)
     build_app = ko_build if ko else docker_build
     build_app(app_name, app_path)
-    deployment = decode_yaml(deployment_yaml(app_name, namespace=namespace, port=app_port))
+    deployment = decode_yaml(deployment_yaml(app_name, replicas=replicas, namespace=namespace, port=app_port, **kwargs))
     k8s_yaml(encode_yaml(with_annotations(deployment, app_name, app_port)))
     k8s_resource(app_name, resource_deps=resource_deps)

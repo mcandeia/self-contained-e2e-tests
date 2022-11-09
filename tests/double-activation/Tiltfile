@@ -7,17 +7,21 @@ def run(namespace):
     redis_resource_name = 'redis'
     app_name = 'actor-activation-locker'
     redis_statestore_resource_name = 'redis-statestore'
+    redis_svc_url = redis_resource(redis_resource_name, namespace)
     ## Add redis statestore and deploy redis
-    redis_statestore_resource(name=redis_statestore_resource_name, namespace=namespace, redis_url=redis_resource(redis_resource_name, namespace), actor_statestore=True, scopes=[app_name])
+    redis_statestore_resource(name=redis_statestore_resource_name, namespace=namespace, redis_url=redis_svc_url, actor_statestore=True, scopes=[app_name])
     ## Deploy app with dapr sidecar
-    dapr_app_resource(app_name, namespace=namespace, ko=True, resource_deps=[redis_statestore_resource_name])
+    dapr_app_resource(app_name, namespace=namespace,replicas=3, ko=True, resource_deps=[redis_statestore_resource_name], **{'env': [{'name':'REDIS_SVC_URL', 'value': redis_svc_url}]})
     ## Run Load test
     k6_test_resource(
         'double-activation-test',
         namespace=namespace,
         parallelism=5,
         from_file='./tests/double-activation/test.js',
-        resource_deps=[app_name]
+        resource_deps=[app_name],
+        #prometheus_url='https://prometheus-prod-10-prod-us-central-0.grafana.net/api/prom/push',
+        #prometheus_user='642741',
+        #runner_env=[{'name':'REDIS_SVC_URL', 'value': redis_svc_url}]
     )
     ## output here
 

@@ -18,28 +18,33 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"sync"
+	"os"
+	"time"
 
+	"github.com/bsm/redislock"
 	"github.com/dapr/go-sdk/actor"
 	dapr "github.com/dapr/go-sdk/client"
 	daprd "github.com/dapr/go-sdk/service/http"
+	redis "github.com/go-redis/redis/v9"
 )
 
-func testActorFactory() actor.Server {
-	client, err := dapr.NewClient()
-	if err != nil {
-		panic(err)
-	}
-	return &TestActor{
-		daprClient: client,
+func testActorFactory(redisClient *redis.Client) func() actor.Server {
+	return func() actor.Server {
+		client, err := dapr.NewClient()
+		if err != nil {
+			panic(err)
+		}
+		return &TestActor{
+			daprClient: client,
+			locker:     redislock.New(redisClient),
+		}
 	}
 }
-
-var locker = sync.Mutex{}
 
 type TestActor struct {
 	actor.ServerImplBase
 	daprClient dapr.Client
+	locker     *redislock.Client
 }
 
 func (t *TestActor) Type() string {
@@ -48,16 +53,31 @@ func (t *TestActor) Type() string {
 
 // user defined functions
 func (t *TestActor) Lock(ctx context.Context, req any) (any, error) {
-	if ok := locker.TryLock(); !ok {
+	lockTimeout := time.Second
+	// Try to obtain lock.
+	lock, err := t.locker.Obtain(ctx, t.ID(), lockTimeout, nil)
+	if err == redislock.ErrNotObtained {
 		return nil, errors.New("resource was locked!")
 	}
-	locker.Unlock()
+
+	if err == nil {
+		if releaseErr := lock.Release(ctx); releaseErr != nil {
+			time.Sleep(lockTimeout) // sleep to make sure that the lock will be automatically released
+		}
+	}
 	return "succeed", nil
 }
 
 func main() {
+	// Connect to redis.
+	client := redis.NewClient(&redis.Options{
+		Network: "tcp",
+		Addr:    os.Getenv("REDIS_SVC_URL"),
+	})
+	defer client.Close()
+
 	s := daprd.NewService(":8080")
-	s.RegisterActorImplFactory(testActorFactory)
+	s.RegisterActorImplFactory(testActorFactory(client))
 	log.Println("started")
 	if err := s.Start(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("error listenning: %v", err)
