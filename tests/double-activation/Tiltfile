@@ -1,10 +1,23 @@
 # -*- mode: Python -*
-load('../../modules/k6.Tiltfile', 'run_load_test')
-load('../../apps/actor-activation-locker/Tiltfile',  app_resource='run')
+load('../../modules/k6.Tiltfile', 'k6_test_resource')
+load('../../modules/dapr.Tiltfile',  'dapr_app_resource')
+load('../../modules/utils.Tiltfile',  'redis_resource', 'redis_statestore_resource')
 
 def run(namespace):
-    resource_name = 'locker-app'
-    app_resource(resource_name, namespace=namespace)
-    run_load_test(namespace=namespace, parallalism=5, from_file='./tests/double-activation/test.js', resource_deps=[resource_name])
+    redis_resource_name = 'redis'
+    app_name = 'actor-activation-locker'
+    redis_statestore_resource_name = 'redis-statestore'
+    ## Add redis statestore and deploy redis
+    redis_statestore_resource(name=redis_statestore_resource_name, namespace=namespace, redis_url=redis_resource(redis_resource_name, namespace), actor_statestore=True, scopes=[app_name])
+    ## Deploy app with dapr sidecar
+    dapr_app_resource(app_name, namespace=namespace, ko=True, resource_deps=[redis_statestore_resource_name])
+    ## Run Load test
+    k6_test_resource(
+        'double-activation-test',
+        namespace=namespace,
+        parallelism=5,
+        from_file='./tests/double-activation/test.js',
+        resource_deps=[app_name]
+    )
     ## output here
 
